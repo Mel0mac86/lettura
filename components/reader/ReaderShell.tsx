@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ReaderBottomBar, ReaderTopBar, type ReaderAction, type ReaderChromePalette } from '@/components/ReaderControls';
@@ -9,6 +9,7 @@ import { useTts } from '@/hooks/useTts';
 import { useServices } from '@/providers/AppServicesProvider';
 import { useSettings } from '@/providers/SettingsProvider';
 import { dataEvents } from '@/services/events';
+import type { SpeechSource } from '@/services/tts/SpeechSource';
 import type { Book, Highlight, Note } from '@/types/models';
 import { showAlert } from '@/utils/dialogs';
 import { resolveSpeechLanguage } from '@/utils/language';
@@ -51,7 +52,8 @@ export interface ReaderShellProps {
   onEditNote: (note: Note) => void;
   onEditHighlight: (highlight: Highlight) => void;
   /** Text to read aloud, starting from the current position. */
-  getSpeechText: () => Promise<string | null>;
+  /** Text to read aloud, section after section, and how the page follows the voice. */
+  speechSource: SpeechSource;
   bottomExtra?: ReactNode;
   overlay?: ReactNode;
   children: ReactNode;
@@ -63,15 +65,15 @@ export function ReaderShell(props: ReaderShellProps) {
   const services = useServices();
   const [sheet, setSheet] = useState<SheetName | null>(null);
   const [ttsOpen, setTtsOpen] = useState(false);
-  const tts = useTts();
+  const languageOf = useCallback((text: string) => resolveSpeechLanguage(book.language, text), [book.language]);
+  const tts = useTts(languageOf);
   const { settings, updateSpeech } = useSettings();
 
   const startTts = async () => {
     tts.unlock(); // before any await: iPhone only allows audio started by a tap
     setTtsOpen(true);
-    const text = await props.getSpeechText();
-    if (text?.trim()) tts.start(text, resolveSpeechLanguage(book.language, text));
-    else showAlert('Lettura ad alta voce', 'Non c’è testo da leggere in questa posizione.');
+    const started = await tts.startReading(props.speechSource);
+    if (!started) showAlert('Lettura ad alta voce', 'Non c’è testo da leggere in questa posizione.');
   };
 
   const actions: ReaderAction[] = [

@@ -15,6 +15,7 @@ import { buildPdfViewerHtml, type PdfCommand, type PdfEvent, type PdfStyle } fro
 import { parseBridgeMessage } from '@/services/reader/bridge';
 import { pdfPageFilter, READER_INFO_LINE } from '@/services/reader/style';
 import { coverFilePath } from '@/services/storage/FileStorage';
+import { nextNonEmptySection, type SpeechSource } from '@/services/tts/SpeechSource';
 import type { Book } from '@/types/models';
 import type { ReaderLocation } from '@/types/reader';
 import { dataUrlToBytes } from '@/utils/base64';
@@ -233,6 +234,23 @@ export function PdfReader({ book, initialLocation }: Props) {
     send({ type: 'zoom', zoom: next });
   };
 
+  // Read aloud page after page; the viewer follows the voice.
+  const speechSource = useMemo<SpeechSource>(
+    () => ({
+      first: async () => {
+        const index = pageRef.current - 1;
+        return { section: index, startOffset: 0, text: (await services.search.getSectionText(book.id, index)) ?? '' };
+      },
+      next: (segment) =>
+        nextNonEmptySection(segment.section, numPagesRef.current, (i) => services.search.getSectionText(book.id, i)),
+      follow: (segment) => {
+        if (pageRef.current !== segment.section + 1) send({ type: 'goto', page: segment.section + 1 });
+      },
+      clear: () => undefined,
+    }),
+    [services, book.id, send],
+  );
+
   if (error) {
     return <ErrorState title="Impossibile aprire il PDF" message={error} />;
   }
@@ -282,7 +300,7 @@ export function PdfReader({ book, initialLocation }: Props) {
       }
       onEditNote={(note) => showNoteActions(note, services, openNoteEditor)}
       onEditHighlight={() => undefined}
-      getSpeechText={() => services.search.getSectionText(book.id, pageRef.current - 1)}
+      speechSource={speechSource}
       bottomExtra={
         <View style={styles.zoomRow}>
           <ZoomButton label="−" onPress={() => changeZoom(-1)} color={palette.text} a11y="Riduci zoom" />

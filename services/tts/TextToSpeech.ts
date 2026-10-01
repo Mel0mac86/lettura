@@ -78,7 +78,17 @@ export class TtsController {
     /** `buffering` is true while the engine prepares the audio of the current sentence. */
     private readonly onChange: (state: TtsState, position: number, buffering: boolean) => void,
     private readonly options: { language?: string; rate?: number; voice?: string } = {},
+    /** Called when the loaded text has been read to the end (not on stop/pause). */
+    private readonly onEnd?: () => void,
   ) {}
+
+  /** Text range of the sentence being read, relative to the loaded text. */
+  get currentRange(): { start: number; end: number } | null {
+    const chunk = this.chunks[this.index];
+    if (!chunk) return null;
+    const lead = chunk.text.length - chunk.text.trimStart().length;
+    return { start: chunk.start + lead, end: chunk.start + chunk.text.trimEnd().length };
+  }
 
   load(text: string): void {
     this.stop();
@@ -158,6 +168,7 @@ export class TtsController {
       this.state = 'idle';
       this.index = 0;
       this.onChange(this.state, 0, false);
+      this.onEnd?.();
       return;
     }
     this.onChange(this.state, chunk.start, true);

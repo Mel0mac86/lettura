@@ -16,6 +16,7 @@ export class PiperEngine implements TextToSpeechEngine {
   private readonly prepared = new Map<string, Promise<Blob>>();
   private token = 0;
   private objectUrl: string | null = null;
+  private watchdog: ReturnType<typeof setTimeout> | null = null;
 
   private key(text: string, rate: number | undefined) {
     return `${rate ?? 1}|${text}`;
@@ -54,11 +55,23 @@ export class PiperEngine implements TextToSpeechEngine {
         this.prepared.delete(this.key(text, options.rate));
         if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
         this.objectUrl = URL.createObjectURL(wav);
-        this.audio.onended = () => token === this.token && options.onDone?.();
+        let finished = false;
+        const done = () => {
+          if (finished || token !== this.token) return;
+          finished = true;
+          if (this.watchdog) clearTimeout(this.watchdog);
+          options.onDone?.();
+        };
+        this.audio.onended = done;
         this.audio.onerror = () => token === this.token && options.onError?.(new Error('Riproduzione non riuscita'));
         this.audio.src = this.objectUrl;
         return this.audio.play().then(() => {
-          if (token === this.token) options.onStart?.();
+          if (token !== this.token) return;
+          options.onStart?.();
+          // Safety net: never get stuck if the browser does not fire "ended" (very short clips, iOS quirks).
+          const duration = Number.isFinite(this.audio.duration) ? this.audio.duration : 30;
+          if (this.watchdog) clearTimeout(this.watchdog);
+          this.watchdog = setTimeout(done, duration * 1000 + 2000);
         });
       })
       .catch((error: unknown) => {
@@ -68,6 +81,7 @@ export class PiperEngine implements TextToSpeechEngine {
 
   stop(): void {
     this.token++;
+    if (this.watchdog) clearTimeout(this.watchdog);
     this.audio.onended = null;
     this.audio.onerror = null;
     this.audio.pause();

@@ -31,6 +31,7 @@ html, body { margin:0; padding:0; height:100%; overflow:hidden; background:var(-
 #content table { border-collapse:collapse; }
 #content blockquote { margin:.5em 1em; font-style:italic; }
 #content mark.mbr-hl { color:inherit !important; border-radius:2px; padding:0; }
+#content mark.mbr-speaking { background-color:var(--selection) !important; border-radius:2px; }
 #content mark.mbr-flash { background-color:var(--selection) !important; outline:2px solid var(--accent); border-radius:2px; }
 ::selection { background:var(--selection); }
 `;
@@ -376,6 +377,15 @@ const READER_SCRIPT = `
         case 'updateHighlight':
           unwrap('mark.mbr-hl[data-id="' + cmd.mark.id + '"]');
           addHighlightWithColor(cmd.mark);
+          break;
+        case 'speaking':
+          unwrap('mark.mbr-speaking');
+          wrapRange(cmd.start, cmd.end, 'mbr-speaking');
+          var speakingPage = pageForOffset(cmd.start);
+          if (speakingPage !== state.page) goToPage(speakingPage);
+          break;
+        case 'clearSpeaking':
+          unwrap('mark.mbr-speaking');
           break;
         case 'clearSelection':
           if (window.getSelection()) window.getSelection().removeAllRanges();

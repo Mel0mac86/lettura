@@ -45,7 +45,10 @@ export type ReflowCommand =
   | { type: 'addHighlight'; mark: HighlightMark }
   | { type: 'removeHighlight'; id: string }
   | { type: 'updateHighlight'; mark: HighlightMark }
-  | { type: 'clearSelection' };
+  | { type: 'clearSelection' }
+  /** Read aloud: mark the sentence being spoken and show its page. */
+  | { type: 'speaking'; start: number; end: number }
+  | { type: 'clearSpeaking' };
 
 export type ReflowEvent =
   | { type: 'ready' }

@@ -16,6 +16,7 @@ import { parseBridgeMessage, type ChapterTarget, type HighlightMark, type Reflow
 import type { ReflowableDocument } from '@/services/reader/ReflowableDocument';
 import { buildReflowReaderHtml } from '@/services/reader/reflowHtml';
 import { buildReaderStyle } from '@/services/reader/style';
+import { nextNonEmptySection, type SpeechSource } from '@/services/tts/SpeechSource';
 import type { Book, Highlight } from '@/types/models';
 import type { ReaderLocation } from '@/types/reader';
 import { showAlert } from '@/utils/dialogs';
@@ -117,10 +118,14 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
     send({ type: 'style', style });
   }, [send, style]);
 
+  /** Chapter currently loaded in the WebView. */
+  const shownChapter = useRef(-1);
+
   const loadChapter = useCallback(
     async (chapter: number, target: ChapterTarget) => {
       const index = Math.max(0, Math.min(doc.chapters.length - 1, chapter));
       pendingTarget.current = { chapter: index, target };
+      shownChapter.current = index;
       try {
         const chapterHtml = await doc.getChapterHtml(index);
         const marks = highlightsRef.current.map((h) => toMark(h, index)).filter((m): m is HighlightMark => m !== null);
@@ -439,6 +444,29 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
     [tocSource, loadChapter],
   );
 
+  // ---- read aloud: chapter after chapter, the page follows the voice ----------------
+  const speechSource = useMemo<SpeechSource>(
+    () => ({
+      first: async () => {
+        const loc = locationRef.current;
+        if (!loc) return null;
+        const text = await doc.getChapterText(loc.chapter);
+        const start = loc.startOffset ?? 0;
+        return { section: loc.chapter, startOffset: start, text: text.slice(start) };
+      },
+      next: (segment) => nextNonEmptySection(segment.section, doc.chapters.length, (i) => doc.getChapterText(i)),
+      follow: (segment, start, end) => {
+        if (shownChapter.current === segment.section) {
+          send({ type: 'speaking', start, end });
+        } else {
+          void loadChapter(segment.section, { kind: 'offset', value: start }).then(() => send({ type: 'speaking', start, end }));
+        }
+      },
+      clear: () => send({ type: 'clearSpeaking' }),
+    }),
+    [doc, loadChapter, send],
+  );
+
   const progress = location
     ? computeReflowProgress(chapterLengths, location.chapter, (location.page + 1) / location.pageCount)
     : book.progress;
@@ -473,12 +501,7 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
       onAddPageNote={addPageNote}
       onEditNote={(note) => showNoteActions(note, services, openNoteEditor)}
       onEditHighlight={handleHighlightTap}
-      getSpeechText={async () => {
-        const loc = locationRef.current;
-        if (!loc) return null;
-        const text = await doc.getChapterText(loc.chapter);
-        return text.slice(loc.startOffset ?? 0);
-      }}
+      speechSource={speechSource}
       overlay={
         <>
           {selection ? (
