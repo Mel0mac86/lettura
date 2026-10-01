@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ReaderPreferenceControls } from '@/components/ReaderPreferenceControls';
+import { SpeechPreferenceControls } from '@/components/SpeechPreferenceControls';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { READER_PALETTES, RADIUS, SPACING } from '@/constants/theme';
@@ -50,6 +51,13 @@ export default function SettingsScreen() {
         >
           Piccoli cambiamenti fanno una grande differenza. Questo è un esempio di come apparirà il testo nel lettore.
         </Text>
+      </View>
+
+      <ThemedText variant="label" tone="secondary" style={styles.section}>
+        🔊 Lettura ad alta voce
+      </ThemedText>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <SpeechPreferenceControls />
       </View>
 
       <ThemedText variant="label" tone="secondary" style={styles.section}>

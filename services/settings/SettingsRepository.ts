@@ -1,5 +1,5 @@
 import type { SqlDatabase } from '@/services/database/SqlDatabase';
-import type { AppSettings, ReaderPreferences } from '@/types/reader';
+import type { AppSettings, ReaderPreferences, SpeechPreferences } from '@/types/reader';
 
 import { DEFAULT_SETTINGS } from './defaults';
 
@@ -13,12 +13,16 @@ export class SettingsRepository {
     const row = await this.db.getFirst<{ value: string }>('SELECT value FROM settings WHERE key = ?', [KEY]);
     if (!row) return DEFAULT_SETTINGS;
     try {
-      const stored = JSON.parse(row.value) as Partial<AppSettings> & { reader?: Partial<ReaderPreferences> };
+      const stored = JSON.parse(row.value) as Partial<AppSettings> & {
+        reader?: Partial<ReaderPreferences>;
+        speech?: Partial<SpeechPreferences>;
+      };
       // Merge with defaults so new settings get a value after an app update.
       return {
         ...DEFAULT_SETTINGS,
         ...stored,
         reader: { ...DEFAULT_SETTINGS.reader, ...(stored.reader ?? {}) },
+        speech: { ...DEFAULT_SETTINGS.speech, ...(stored.speech ?? {}) },
       };
     } catch {
       return DEFAULT_SETTINGS;

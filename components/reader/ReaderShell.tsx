@@ -7,6 +7,7 @@ import { ReaderBottomBar, ReaderTopBar, type ReaderAction, type ReaderChromePale
 import type { BookAnnotations } from '@/hooks/useBookAnnotations';
 import { useTts } from '@/hooks/useTts';
 import { useServices } from '@/providers/AppServicesProvider';
+import { useSettings } from '@/providers/SettingsProvider';
 import { dataEvents } from '@/services/events';
 import type { Book, Highlight, Note } from '@/types/models';
 import { showAlert } from '@/utils/dialogs';
@@ -61,7 +62,8 @@ export function ReaderShell(props: ReaderShellProps) {
   const services = useServices();
   const [sheet, setSheet] = useState<SheetName | null>(null);
   const [ttsOpen, setTtsOpen] = useState(false);
-  const tts = useTts(book.language);
+  const tts = useTts();
+  const { settings, updateSpeech } = useSettings();
 
   const startTts = async () => {
     setTtsOpen(true);
@@ -121,6 +123,8 @@ export function ReaderShell(props: ReaderShellProps) {
             onPause={tts.pause}
             onStop={tts.stop}
             onSeek={tts.seek}
+            rate={settings.speech.rate}
+            onChangeRate={(rate) => updateSpeech({ rate })}
             onClose={() => {
               tts.stop();
               setTtsOpen(false);

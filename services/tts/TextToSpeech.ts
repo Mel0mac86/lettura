@@ -8,6 +8,8 @@
 export interface SpeakOptions {
   language?: string;
   rate?: number;
+  /** Preferred voice; the engine ignores it when it does not speak `language`. */
+  voice?: string;
   onDone?: () => void;
   onError?: (error: Error) => void;
 }
@@ -69,14 +71,25 @@ export class TtsController {
   constructor(
     private readonly engine: TextToSpeechEngine,
     private readonly onChange: (state: TtsState, position: number) => void,
-    private readonly options: { language?: string; rate?: number } = {},
+    private readonly options: { language?: string; rate?: number; voice?: string } = {},
   ) {}
 
-  load(text: string, language?: string): void {
+  load(text: string): void {
     this.stop();
-    if (language) this.options.language = language;
     this.chunks = splitIntoUtterances(text, this.engine.maxInputLength);
     this.index = 0;
+  }
+
+  /** Changes language/rate/voice; while playing, the current sentence restarts with the new settings. */
+  configure(options: { language?: string; rate?: number; voice?: string | null }): void {
+    if (options.language !== undefined) this.options.language = options.language;
+    if (options.rate !== undefined) this.options.rate = options.rate;
+    if (options.voice !== undefined) this.options.voice = options.voice ?? undefined;
+    if (this.state === 'playing') {
+      this.session++;
+      this.engine.stop();
+      this.speakCurrent();
+    }
   }
 
   get position(): number {
@@ -139,6 +152,7 @@ export class TtsController {
     this.engine.speak(chunk.text, {
       language: this.options.language,
       rate: this.options.rate,
+      voice: this.options.voice,
       onDone: () => {
         if (session !== this.session || this.state !== 'playing') return;
         this.index++;

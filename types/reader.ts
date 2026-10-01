@@ -48,10 +48,19 @@ export interface ReaderPreferences {
   justify: boolean;
 }
 
+/** "Leggi ad alta voce" preferences. */
+export interface SpeechPreferences {
+  /** Preferred voice identifier; null = choose automatically for the book language. */
+  voice: string | null;
+  /** Speaking rate multiplier (1 = normal). */
+  rate: number;
+}
+
 export interface AppSettings {
   appTheme: AppThemePreference;
   libraryView: LibraryViewMode;
   reader: ReaderPreferences;
+  speech: SpeechPreferences;
 }
 
 export interface ReaderPalette {

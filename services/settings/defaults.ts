@@ -12,7 +12,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
     maxTextWidth: 680,
     justify: false,
   },
+  speech: {
+    voice: null,
+    rate: 1,
+  },
 };
+
+export const SPEECH_RATE_LIMITS = { min: 0.5, max: 2, step: 0.1 } as const;
 
 export const READER_LIMITS = {
   fontSize: { min: 12, max: 36, step: 1 },

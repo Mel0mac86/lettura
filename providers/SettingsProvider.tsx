@@ -4,7 +4,7 @@ import { useColorScheme } from 'react-native';
 import { DARK_COLORS, LIGHT_COLORS, type AppColors } from '@/constants/theme';
 import { dataEvents } from '@/services/events';
 import { DEFAULT_SETTINGS } from '@/services/settings/defaults';
-import type { AppSettings, ReaderPreferences } from '@/types/reader';
+import type { AppSettings, ReaderPreferences, SpeechPreferences } from '@/types/reader';
 
 import { useServices } from './AppServicesProvider';
 
@@ -12,8 +12,9 @@ interface SettingsContextValue {
   settings: AppSettings;
   colors: AppColors;
   isDark: boolean;
-  updateSettings(changes: Partial<Omit<AppSettings, 'reader'>>): void;
+  updateSettings(changes: Partial<Omit<AppSettings, 'reader' | 'speech'>>): void;
   updateReader(changes: Partial<ReaderPreferences>): void;
+  updateSpeech(changes: Partial<SpeechPreferences>): void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -40,7 +41,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   );
 
   const updateSettings = useCallback(
-    (changes: Partial<Omit<AppSettings, 'reader'>>) => persist({ ...settings, ...changes }),
+    (changes: Partial<Omit<AppSettings, 'reader' | 'speech'>>) => persist({ ...settings, ...changes }),
     [persist, settings],
   );
   const updateReader = useCallback(
@@ -48,10 +49,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     [persist, settings],
   );
 
+  const updateSpeech = useCallback(
+    (changes: Partial<SpeechPreferences>) => persist({ ...settings, speech: { ...settings.speech, ...changes } }),
+    [persist, settings],
+  );
+
   const isDark = settings.appTheme === 'system' ? systemScheme === 'dark' : settings.appTheme === 'dark';
   const value = useMemo<SettingsContextValue>(
-    () => ({ settings, colors: isDark ? DARK_COLORS : LIGHT_COLORS, isDark, updateSettings, updateReader }),
-    [settings, isDark, updateSettings, updateReader],
+    () => ({ settings, colors: isDark ? DARK_COLORS : LIGHT_COLORS, isDark, updateSettings, updateReader, updateSpeech }),
+    [settings, isDark, updateSettings, updateReader, updateSpeech],
   );
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
