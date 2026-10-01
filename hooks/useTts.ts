@@ -22,10 +22,11 @@ export function useTts(language: string | null) {
   return {
     state,
     /** Loads `text` and starts speaking from the beginning. */
+    /** Loads `text` (spoken with `language`, e.g. "it-IT") and starts from the beginning. */
     start: useCallback(
-      (text: string) => {
+      (text: string, language?: string) => {
         const c = get();
-        c.load(text);
+        c.load(text, language);
         if (c.hasContent) c.play();
       },
       [get],

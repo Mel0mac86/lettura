@@ -72,8 +72,9 @@ export class TtsController {
     private readonly options: { language?: string; rate?: number } = {},
   ) {}
 
-  load(text: string): void {
+  load(text: string, language?: string): void {
     this.stop();
+    if (language) this.options.language = language;
     this.chunks = splitIntoUtterances(text, this.engine.maxInputLength);
     this.index = 0;
   }

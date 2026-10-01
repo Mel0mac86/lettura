@@ -10,6 +10,7 @@ import { useServices } from '@/providers/AppServicesProvider';
 import { dataEvents } from '@/services/events';
 import type { Book, Highlight, Note } from '@/types/models';
 import { showAlert } from '@/utils/dialogs';
+import { resolveSpeechLanguage } from '@/utils/language';
 import { toUserMessage } from '@/utils/errors';
 
 import { BookAnnotationsSheet } from './BookAnnotationsSheet';
@@ -65,7 +66,7 @@ export function ReaderShell(props: ReaderShellProps) {
   const startTts = async () => {
     setTtsOpen(true);
     const text = await props.getSpeechText();
-    if (text?.trim()) tts.start(text);
+    if (text?.trim()) tts.start(text, resolveSpeechLanguage(book.language, text));
     else showAlert('Lettura ad alta voce', 'Non c’è testo da leggere in questa posizione.');
   };
 
