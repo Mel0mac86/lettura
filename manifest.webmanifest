@@ -1,0 +1,16 @@
+{
+  "name": "My Book Reader",
+  "short_name": "Book Reader",
+  "start_url": "/lettura/",
+  "scope": "/lettura/",
+  "display": "standalone",
+  "background_color": "#F7F4EE",
+  "theme_color": "#F7F4EE",
+  "icons": [
+    {
+      "src": "/lettura/apple-touch-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
