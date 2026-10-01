@@ -51,3 +51,6 @@ coverage/
 
 # web build for GitHub Pages
 dist-web/
+
+# Piper runtime copied by scripts/copy-piper-assets.js
+public/piper/

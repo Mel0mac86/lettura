@@ -54,6 +54,8 @@ export interface SpeechPreferences {
   voice: string | null;
   /** Speaking rate multiplier (1 = normal). */
   rate: number;
+  /** Use the downloaded natural (neural) voice when available (web). */
+  naturalVoice: boolean;
 }
 
 export interface AppSettings {

@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   speech: {
     voice: null,
     rate: 1,
+    naturalVoice: false,
   },
 };
 

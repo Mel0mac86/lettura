@@ -46,7 +46,8 @@ Costruita con **React Native + Expo (SDK 57) + TypeScript**, gira su **iPhone, A
 **Altro**
 - 🔍 **Ricerca globale** su titoli, autori, testo dei libri, note ed evidenziazioni
 - 📊 **Dashboard**: continua a leggere, libri in lettura/totali/preferiti/completati, pagine lette, tempo di lettura, giorni consecutivi
-- 🔊 **Leggi ad alta voce** (voci native iOS/Android): ▶ Play · ⏸ Pausa · ⏹ Stop · ⏪ -15 s · ⏩ +15 s
+- 🔊 **Leggi ad alta voce**: ▶ Play · ⏸ Pausa · ⏹ Stop · ⏪ -15 s · ⏩ +15 s, velocità e scelta della voce.
+  Nella web app è disponibile la **voce naturale italiana "Paola"** (Piper, neurale, gratuita e offline dopo un download di circa 90 MB)
 - 🌙 Modalità chiara/scura dell'app (anche automatica)
 - ✈️ **Offline**: nessuna connessione necessaria per aprire e leggere i libri
 
@@ -115,6 +116,13 @@ e inquadra di nuovo il QR code. Se lo chiede, conferma l'installazione di `@expo
 
 > ℹ️ Con Expo Go l'app funziona finché il computer esegue `npx expo start`; i libri importati
 > restano comunque salvati nello spazio di Expo Go sull'iPhone.
+
+### Metodo web — link da aggiungere alla schermata Home
+
+La versione web è pubblicata su **https://mel0mac86.github.io/lettura/**: aprila in Safari →
+Condividi → **Aggiungi alla schermata Home**. Per aggiornarla: `npm run build:web` e pubblica `dist-web/`
+sul branch `gh-pages`. Su web le voci "Premium" di iOS non sono accessibili (limite di Apple): usa la voce
+naturale Paola dalle Impostazioni dell'app.
 
 ### Metodo 2 — App installata sull'iPhone (build con EAS)
 

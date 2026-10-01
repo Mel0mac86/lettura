@@ -3,6 +3,20 @@
 Tutte le modifiche rilevanti del progetto sono documentate in questo file.
 Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il progetto usa il [Semantic Versioning](https://semver.org/lang/it/).
 
+## [1.1.0] - 2026-10-01
+
+### Aggiunto
+- Versione web installabile su iPhone ("Aggiungi alla schermata Home") pubblicata su GitHub Pages.
+- **Voce naturale italiana (Paola, Piper)** nella web app: voce neurale gratuita che gira sul telefono, anche offline,
+  scaricata una sola volta dalle Impostazioni; la frase successiva viene preparata mentre ascolti.
+- Scelta di voce e velocità della lettura ad alta voce, con prova della voce.
+- Numero di pagina sull'intero libro per EPUB/TXT e pagine mancanti alla fine del capitolo.
+
+### Corretto
+- La lettura ad alta voce usa la lingua del testo (prima i PDF/TXT venivano letti con la voce inglese).
+- Web: database compatibile con tutti i browser e con più finestre aperte.
+- Le statistiche contano solo le pagine lette andando avanti.
+
 ## [1.0.0] - 2026-09-30
 
 ### Aggiunto

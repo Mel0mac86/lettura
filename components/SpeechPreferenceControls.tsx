@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { NaturalVoiceSection } from '@/components/NaturalVoiceSection';
 import { Chip } from '@/components/ui/Chip';
 import { IconButton } from '@/components/ui/IconButton';
 import { ThemedText } from '@/components/ui/ThemedText';
@@ -62,6 +63,7 @@ export function SpeechPreferenceControls() {
 
   return (
     <View>
+      <NaturalVoiceSection />
       <View style={styles.rateRow}>
         <ThemedText style={styles.flex}>Velocità</ThemedText>
         <IconButton icon="remove-circle-outline" onPress={() => setRate(-1)} disabled={rate <= SPEECH_RATE_LIMITS.min} accessibilityLabel="Più lenta" />

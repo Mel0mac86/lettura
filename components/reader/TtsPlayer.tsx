@@ -6,6 +6,8 @@ import type { TtsState } from '@/services/tts/TextToSpeech';
 
 interface Props {
   state: TtsState;
+  /** The voice is preparing the audio (first use of the natural voice can take a few seconds). */
+  buffering?: boolean;
   palette: ReaderChromePalette;
   onPlay: () => void;
   onPause: () => void;
@@ -19,7 +21,7 @@ interface Props {
 const RATES = [0.8, 1, 1.2, 1.5, 1.8];
 
 /** "🔊 Leggi ad alta voce" controls: ⏪ -15s, ▶/⏸, ⏹, ⏩ +15s. */
-export function TtsPlayer({ state, palette, onPlay, onPause, onStop, onSeek, onClose, rate, onChangeRate }: Props) {
+export function TtsPlayer({ state, buffering, palette, onPlay, onPause, onStop, onSeek, onClose, rate, onChangeRate }: Props) {
   const color = palette.text;
   const button = (icon: keyof typeof Ionicons.glyphMap, label: string, onPress: () => void, size = 26) => (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={styles.button}>
@@ -28,7 +30,9 @@ export function TtsPlayer({ state, palette, onPlay, onPause, onStop, onSeek, onC
   );
   return (
     <View style={[styles.container, { backgroundColor: palette.background, borderColor: palette.secondaryText + '44' }]}>
-      <Text style={[styles.label, { color: palette.secondaryText }]}>🔊 Leggi ad alta voce</Text>
+      <Text style={[styles.label, { color: palette.secondaryText }]}>
+        {buffering && state === 'playing' ? '⏳ Preparo la voce…' : '🔊 Leggi ad alta voce'}
+      </Text>
       <View style={styles.row}>
         {button('play-back', 'Indietro di 15 secondi', () => onSeek(-15))}
         {state === 'playing' ? button('pause-circle', 'Pausa', onPause, 44) : button('play-circle', 'Riproduci', onPlay, 44)}

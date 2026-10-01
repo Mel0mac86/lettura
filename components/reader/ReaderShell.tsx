@@ -67,6 +67,7 @@ export function ReaderShell(props: ReaderShellProps) {
   const { settings, updateSpeech } = useSettings();
 
   const startTts = async () => {
+    tts.unlock(); // before any await: iPhone only allows audio started by a tap
     setTtsOpen(true);
     const text = await props.getSpeechText();
     if (text?.trim()) tts.start(text, resolveSpeechLanguage(book.language, text));
@@ -120,6 +121,7 @@ export function ReaderShell(props: ReaderShellProps) {
         {ttsOpen ? (
           <TtsPlayer
             state={tts.state}
+            buffering={tts.buffering}
             palette={palette}
             onPlay={() => (tts.state === 'idle' ? startTts() : tts.play())}
             onPause={tts.pause}

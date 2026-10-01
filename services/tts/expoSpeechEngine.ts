@@ -46,6 +46,7 @@ export class ExpoSpeechEngine implements TextToSpeechEngine {
       language: options.language,
       voice,
       rate: options.rate,
+      onStart: options.onStart,
       onDone: options.onDone,
       onError: (error) => options.onError?.(error instanceof Error ? error : new Error(String(error))),
     });

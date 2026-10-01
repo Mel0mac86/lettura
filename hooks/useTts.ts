@@ -1,19 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useSettings } from '@/providers/SettingsProvider';
-import { ExpoSpeechEngine } from '@/services/tts/expoSpeechEngine';
+import { createSpeechEngine } from '@/services/tts/createSpeechEngine';
 import { TtsController, type TtsState } from '@/services/tts/TextToSpeech';
+import { showAlert } from '@/utils/dialogs';
 
-/** React binding of {@link TtsController}: native voices + user speech preferences. */
+/** React binding of {@link TtsController}: speech engine + user speech preferences. */
 export function useTts() {
   const { settings } = useSettings();
-  const { rate, voice } = settings.speech;
+  const { rate, voice, naturalVoice } = settings.speech;
   const [state, setState] = useState<TtsState>('idle');
+  const [buffering, setBuffering] = useState(false);
   const controller = useRef<TtsController | null>(null);
+  const naturalRef = useRef(naturalVoice);
+
+  useEffect(() => {
+    naturalRef.current = naturalVoice;
+  }, [naturalVoice]);
 
   const get = useCallback(() => {
     if (!controller.current) {
-      controller.current = new TtsController(new ExpoSpeechEngine(), (next) => setState(next));
+      const engine = createSpeechEngine({
+        isNaturalEnabled: () => naturalRef.current,
+        onNaturalError: (error) =>
+          showAlert('Voce naturale non disponibile', `Uso la voce di sistema. (${error.message})`),
+      });
+      controller.current = new TtsController(engine, (next, _position, isBuffering) => {
+        setState(next);
+        setBuffering(isBuffering);
+      });
     }
     return controller.current;
   }, []);
@@ -31,6 +46,10 @@ export function useTts() {
 
   return {
     state,
+    /** True while the audio of the current sentence is being prepared. */
+    buffering,
+    /** Call synchronously in the tap handler before any await (iPhone audio rules). */
+    unlock: useCallback(() => get().unlock(), [get]),
     /** Loads `text` (spoken in `language`, e.g. "it-IT") and starts from the beginning. */
     start: useCallback(
       (text: string, language?: string) => {

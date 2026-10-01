@@ -1,15 +1,16 @@
 /**
  * Text-to-Speech abstraction ("🔊 Leggi ad alta voce").
  *
- * V1 ships a simple engine based on the native iOS/Android voices (expo-speech).
- * The controller is engine-agnostic so a future engine (cloud voices, offline
- * neural TTS) can be plugged in without touching the UI.
+ * Engines: the native iOS/Android/browser voices (expo-speech) and, on the web,
+ * an offline neural Italian voice (Piper). The controller is engine-agnostic.
  */
 export interface SpeakOptions {
   language?: string;
   rate?: number;
   /** Preferred voice; the engine ignores it when it does not speak `language`. */
   voice?: string;
+  /** Called when audio actually starts (engines that need time to synthesize). */
+  onStart?: () => void;
   onDone?: () => void;
   onError?: (error: Error) => void;
 }
@@ -17,6 +18,10 @@ export interface SpeakOptions {
 export interface TextToSpeechEngine {
   speak(text: string, options: SpeakOptions): void;
   stop(): void;
+  /** Optional: synthesize `text` ahead of time to avoid pauses between sentences. */
+  prepare?(text: string, options: SpeakOptions): void;
+  /** Optional: unlock audio playback; must be called synchronously in a tap handler (iOS). */
+  unlock?(): void;
   /** Max characters accepted by a single `speak` call. */
   readonly maxInputLength: number;
 }
@@ -41,7 +46,7 @@ export function splitIntoUtterances(text: string, maxLength: number): { start: n
       sentence.lastIndex++;
       continue;
     }
-    if (current.length + match[0].length > Math.min(maxLength, 400) && current) {
+    if (current.length + match[0].length > Math.min(maxLength, 220) && current) {
       push();
       current = '';
       currentStart = match.index;
@@ -70,7 +75,8 @@ export class TtsController {
 
   constructor(
     private readonly engine: TextToSpeechEngine,
-    private readonly onChange: (state: TtsState, position: number) => void,
+    /** `buffering` is true while the engine prepares the audio of the current sentence. */
+    private readonly onChange: (state: TtsState, position: number, buffering: boolean) => void,
     private readonly options: { language?: string; rate?: number; voice?: string } = {},
   ) {}
 
@@ -100,7 +106,13 @@ export class TtsController {
     return this.chunks.length > 0;
   }
 
+  /** See {@link TextToSpeechEngine.unlock}. */
+  unlock(): void {
+    this.engine.unlock?.();
+  }
+
   play(): void {
+    this.engine.unlock?.();
     if (!this.chunks.length || this.index >= this.chunks.length) {
       this.index = 0;
     }
@@ -113,7 +125,7 @@ export class TtsController {
     this.session++;
     this.engine.stop();
     this.state = 'paused';
-    this.onChange(this.state, this.position);
+    this.onChange(this.state, this.position, false);
   }
 
   stop(): void {
@@ -121,7 +133,7 @@ export class TtsController {
     this.engine.stop();
     this.index = 0;
     this.state = 'idle';
-    this.onChange(this.state, 0);
+    this.onChange(this.state, 0, false);
   }
 
   /** Moves forward/backward by a number of seconds (estimated). */
@@ -135,7 +147,7 @@ export class TtsController {
       this.engine.stop();
       this.speakCurrent();
     } else {
-      this.onChange(this.state, this.position);
+      this.onChange(this.state, this.position, false);
     }
   }
 
@@ -145,14 +157,16 @@ export class TtsController {
     if (!chunk) {
       this.state = 'idle';
       this.index = 0;
-      this.onChange(this.state, 0);
+      this.onChange(this.state, 0, false);
       return;
     }
-    this.onChange(this.state, chunk.start);
+    this.onChange(this.state, chunk.start, true);
+    const options = { language: this.options.language, rate: this.options.rate, voice: this.options.voice };
     this.engine.speak(chunk.text, {
-      language: this.options.language,
-      rate: this.options.rate,
-      voice: this.options.voice,
+      ...options,
+      onStart: () => {
+        if (session === this.session && this.state === 'playing') this.onChange(this.state, chunk.start, false);
+      },
       onDone: () => {
         if (session !== this.session || this.state !== 'playing') return;
         this.index++;
@@ -161,8 +175,10 @@ export class TtsController {
       onError: () => {
         if (session !== this.session) return;
         this.state = 'idle';
-        this.onChange(this.state, this.position);
+        this.onChange(this.state, this.position, false);
       },
     });
+    const next = this.chunks[this.index + 1];
+    if (next) this.engine.prepare?.(next.text, options);
   }
 }
