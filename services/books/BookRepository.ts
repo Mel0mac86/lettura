@@ -94,6 +94,8 @@ export interface ReadingPositionUpdate {
   progress: number;
   currentPage?: number | null;
   currentChapter?: string | null;
+  /** Updated total pages (EPUB/TXT pages depend on font and screen). */
+  totalPages?: number | null;
 }
 
 export interface ReadingPosition {
@@ -260,13 +262,14 @@ export class BookRepository {
     const now = this.now();
     const progress = Math.min(1, Math.max(0, position.progress));
     const result = await this.db.run(
-      `UPDATE books SET location = ?, progress = ?, currentPage = ?, currentChapter = ?, status = ?,
-       lastReadAt = ?, updatedAt = ? WHERE id = ?`,
+      `UPDATE books SET location = ?, progress = ?, currentPage = ?, currentChapter = ?,
+       totalPages = COALESCE(?, totalPages), status = ?, lastReadAt = ?, updatedAt = ? WHERE id = ?`,
       [
         serializeLocation(position.location),
         progress,
         position.currentPage ?? null,
         position.currentChapter ?? null,
+        position.totalPages ?? null,
         // Opening a book always means it is being read, even at 0%.
         statusFromProgress(progress) === 'completed' ? 'completed' : 'reading',
         now,

@@ -21,6 +21,7 @@ import type { ReaderLocation } from '@/types/reader';
 import { showAlert } from '@/utils/dialogs';
 import { toUserMessage } from '@/utils/errors';
 import { parseLocation, reflowLocation, reflowRange } from '@/utils/location';
+import { computeBookPagination } from '@/utils/pagination';
 import { computeReflowProgress } from '@/utils/progress';
 import { buildSnippet, findAllOccurrences } from '@/utils/text';
 
@@ -45,6 +46,10 @@ interface CurrentLocation {
   startOffset: number | null;
   endOffset: number | null;
   snippet: string;
+  /** Book-wide page numbering (see utils/pagination.ts). */
+  bookPage: number;
+  totalPages: number;
+  remainingInChapter: number;
 }
 
 interface Selection {
@@ -102,8 +107,13 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
   const styleRef = useRef(style);
   const send = useCallback((command: ReflowCommand) => webRef.current?.send(command), []);
 
+  // Page counts of chapters laid out with the current style (see utils/pagination.ts).
+  const measuredPages = useRef(new Map<number, number>());
+
   useEffect(() => {
     styleRef.current = style;
+    // A new font/margin changes every page count: measure again.
+    measuredPages.current = new Map();
     send({ type: 'style', style });
   }, [send, style]);
 
@@ -141,7 +151,8 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
         .savePosition(book.id, {
           location: reflowLocation(loc.chapter, loc.page / loc.pageCount, loc.startOffset ?? undefined),
           progress: computeReflowProgress(chapterLengths, loc.chapter, readFraction),
-          currentPage: loc.page + 1,
+          currentPage: loc.bookPage,
+          totalPages: loc.totalPages,
           currentChapter: doc.chapters[loc.chapter]?.title ?? null,
         })
         .catch(() => undefined);
@@ -209,14 +220,23 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
       if (!event) return;
       switch (event.type) {
         case 'location': {
+          const pageCount = Math.max(1, event.pageCount);
+          measuredPages.current.set(event.chapter, pageCount);
+          const pagination = computeBookPagination(chapterLengths, measuredPages.current, event.chapter, event.page);
           const loc: CurrentLocation = {
             chapter: event.chapter,
             page: event.page,
-            pageCount: Math.max(1, event.pageCount),
+            pageCount,
             startOffset: event.startOffset,
             endOffset: event.endOffset,
             snippet: event.snippet,
+            bookPage: pagination.page,
+            totalPages: pagination.totalPages,
+            remainingInChapter: pagination.remainingInChapter,
           };
+          // Statistics: count only pages read moving forward one at a time (not jumps or going back).
+          const previous = locationRef.current;
+          if (previous && loc.bookPage === previous.bookPage + 1) session.addPagesRead(1);
           locationRef.current = loc;
           setLocation(loc);
           if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -233,21 +253,18 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
           setControlsVisible((visible) => !visible);
           break;
         case 'pageTurn':
-          session.onPageTurn();
           setControlsVisible(false);
           break;
         case 'boundary': {
           const chapter = locationRef.current?.chapter ?? 0;
           if (event.direction === 'next') {
             if (chapter < doc.chapters.length - 1) {
-              session.onPageTurn();
               void loadChapter(chapter + 1, { kind: 'start' });
             } else {
               void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
               showAlert('Fine del libro', 'Hai raggiunto la fine. Il libro è stato segnato come completato. 🎉');
             }
           } else if (chapter > 0) {
-            session.onPageTurn();
             void loadChapter(chapter - 1, { kind: 'end' });
           }
           break;
@@ -281,7 +298,7 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
           break;
       }
     },
-    [doc, loadChapter, persist, send, session, handleHighlightTap],
+    [doc, chapterLengths, loadChapter, persist, send, session, handleHighlightTap],
   );
 
   // ---- navigation & annotations ------------------------------------------------
@@ -433,7 +450,14 @@ export function ReflowReader({ book, doc, initialLocation }: Props) {
       mode="reflow"
       controlsVisible={controlsVisible}
       subtitle={chapterTitle || book.title}
-      pageLabel={location ? `Pag. ${location.page + 1} di ${location.pageCount}` : 'Caricamento…'}
+      pageLabel={location ? `Pag. ${location.bookPage} di ${location.totalPages}` : 'Caricamento…'}
+      pageDetail={
+        location
+          ? location.remainingInChapter === 0
+            ? 'Ultima pagina del capitolo'
+            : `${location.remainingInChapter} ${location.remainingInChapter === 1 ? 'pagina' : 'pagine'} alla fine del capitolo`
+          : undefined
+      }
       progress={progress}
       onPrev={() => send({ type: 'prev' })}
       onNext={() => send({ type: 'next' })}

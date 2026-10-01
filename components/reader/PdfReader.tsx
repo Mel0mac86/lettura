@@ -152,13 +152,12 @@ export function PdfReader({ book, initialLocation }: Props) {
           void onOpened(event);
           break;
         case 'page':
+          // Statistics: count pages reached moving forward one at a time.
+          if (opened.current && event.page === pageRef.current + 1) session.addPagesRead(1);
           pageRef.current = event.page;
           setPage(event.page);
           if (saveTimer.current) clearTimeout(saveTimer.current);
           saveTimer.current = setTimeout(() => persist(event.page), SAVE_DELAY_MS);
-          break;
-        case 'pageTurn':
-          session.onPageTurn();
           break;
         case 'tap':
           setControlsVisible((v) => !v);

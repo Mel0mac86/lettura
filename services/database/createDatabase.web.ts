@@ -58,6 +58,12 @@ export async function createDatabase(): Promise<SqlDatabase> {
   };
   const schedule = () => {
     if (timer) clearTimeout(timer);
+    // The app may be suspended right after going to background: save immediately.
+    if (document.visibilityState === 'hidden') {
+      timer = null;
+      flush();
+      return;
+    }
     timer = setTimeout(flush, SAVE_DELAY_MS);
   };
   // Make sure nothing is lost when the user leaves the app.

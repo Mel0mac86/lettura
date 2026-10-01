@@ -29,6 +29,7 @@ export interface ReaderShellProps {
   controlsVisible: boolean;
   subtitle: string;
   pageLabel: string;
+  pageDetail?: string;
   progress: number;
   onPrev: () => void;
   onNext: () => void;
@@ -109,6 +110,7 @@ export function ReaderShell(props: ReaderShellProps) {
         visible={controlsVisible || ttsOpen}
         palette={palette}
         pageLabel={props.pageLabel}
+        pageDetail={props.pageDetail}
         progress={props.progress}
         onPrev={props.onPrev}
         onNext={props.onNext}

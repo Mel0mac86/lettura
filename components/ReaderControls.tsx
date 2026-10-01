@@ -81,6 +81,8 @@ interface BottomBarProps {
   palette: ReaderChromePalette;
   /** e.g. "Pag. 3 di 12" */
   pageLabel: string;
+  /** Extra line under the page number, e.g. "3 pagine alla fine del capitolo". */
+  pageDetail?: string;
   progress: number;
   onPrev: () => void;
   onNext: () => void;
@@ -90,7 +92,7 @@ interface BottomBarProps {
 }
 
 /** Reader footer: progress, page indicator and navigation buttons. */
-export function ReaderBottomBar({ visible, palette, pageLabel, progress, onPrev, onNext, prevLabel, nextLabel, children }: BottomBarProps) {
+export function ReaderBottomBar({ visible, palette, pageLabel, pageDetail, progress, onPrev, onNext, prevLabel, nextLabel, children }: BottomBarProps) {
   const insets = useSafeAreaInsets();
   const percent = `${Math.floor(Math.min(1, Math.max(0, progress)) * 100)}%` as const;
   if (!visible) {
@@ -111,7 +113,9 @@ export function ReaderBottomBar({ visible, palette, pageLabel, progress, onPrev,
         <BarButton icon="chevron-back-circle-outline" label={prevLabel} onPress={onPrev} palette={palette} />
         <View style={styles.bottomCenter}>
           <Text style={[styles.pageLabel, { color: palette.text }]}>{pageLabel}</Text>
-          <Text style={[styles.subtitle, { color: palette.secondaryText }]}>{percent} letto</Text>
+          <Text style={[styles.subtitle, { color: palette.secondaryText }]}>
+            {percent} letto{pageDetail ? ` · ${pageDetail}` : ''}
+          </Text>
         </View>
         <BarButton icon="chevron-forward-circle-outline" label={nextLabel} onPress={onNext} palette={palette} />
       </View>

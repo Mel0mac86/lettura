@@ -41,9 +41,10 @@ export function useReadingSession(bookId: string) {
     };
   }, [flush]);
 
-  const onPageTurn = useCallback(() => {
-    pages.current += 1;
+  /** Adds pages actually read (forward reading only). */
+  const addPagesRead = useCallback((count: number) => {
+    pages.current += Math.max(0, count);
   }, []);
 
-  return { onPageTurn };
+  return { addPagesRead };
 }
