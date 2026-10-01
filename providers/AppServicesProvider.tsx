@@ -5,7 +5,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { runMigrations } from '@/database/migrate';
 import { createServices, type AppServices } from '@/services/container';
-import { ExpoSqliteDatabase } from '@/services/database/expoSqliteDatabase';
+import { createDatabase } from '@/services/database/createDatabase';
 import { createFileStorage } from '@/services/storage/createFileStorage';
 import { toUserMessage } from '@/utils/errors';
 
@@ -17,7 +17,7 @@ async function sha256(bytes: Uint8Array): Promise<string> {
 }
 
 async function initServices(): Promise<AppServices> {
-  const db = await ExpoSqliteDatabase.open();
+  const db = await createDatabase();
   await runMigrations(db);
   const storage = await createFileStorage();
   return createServices({ db, storage, newId: () => Crypto.randomUUID(), hash: sha256 });
