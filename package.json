@@ -60,7 +60,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "check": "npm run lint && npm run typecheck && npm test"
+    "check": "npm run lint && npm run typecheck && npm test",
+    "build:web": "node scripts/build-web-pages.js"
   },
   "private": true,
   "description": "My Book Reader - app personale per caricare, organizzare e leggere i tuoi libri digitali (EPUB, PDF, TXT), offline-first.",

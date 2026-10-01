@@ -11,6 +11,6 @@ module.exports = defineConfig([
     },
   },
   {
-    ignores: ['dist/*', 'node_modules/*', 'services/pdf/generated/*', 'coverage/*', '.expo/*'],
+    ignores: ['dist/*', 'dist-web/*', 'node_modules/*', 'services/pdf/generated/*', 'coverage/*', '.expo/*'],
   },
 ]);

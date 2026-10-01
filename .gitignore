@@ -48,3 +48,6 @@ yarn-error.*
 # generated
 services/pdf/generated/
 coverage/
+
+# web build for GitHub Pages
+dist-web/
